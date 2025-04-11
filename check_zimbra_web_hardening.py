@@ -1,4 +1,3 @@
-# replace zimbra_url = "https://webmail.zimbra-url/" with your own web url 
 #!/usr/bin/env python3
 import subprocess
 import os
@@ -10,6 +9,9 @@ GREEN = '\033[1;32m'
 YELLOW = '\033[1;33m'
 RED = '\033[1;31m'
 RESET = '\033[0m'
+
+# Zimbra-server URL (vervang dit door de juiste URL van jouw server)
+ZIMBRA_URL = "https://webmail.my-zimbra.be/"
 
 def get_zimbra_config(key):
     """Haal de Zimbra configuratie op voor een specifieke sleutel."""
@@ -26,6 +28,19 @@ def get_zimbra_config(key):
     except subprocess.CalledProcessError as e:
         print(f"Fout bij het ophalen van configuratie voor {key}: {e.stderr.decode('utf-8')}")
         return None
+
+def get_cos_list():
+    """Haal de lijst van COS'en op."""
+    try:
+        result = subprocess.run(
+            ['sudo', '-u', 'zimbra', '/opt/zimbra/bin/zmprov', 'gac'],  # Haal alle COS'en op
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        )
+        cos_list = result.stdout.decode('utf-8').strip().split("\n")
+        return cos_list
+    except subprocess.CalledProcessError as e:
+        print(f"Fout bij het ophalen van COS lijst: {e.stderr.decode('utf-8')}")
+        return []
 
 def check_tls_protocols():
     """Controleer TLS protocollen."""
@@ -45,7 +60,7 @@ def check_ssl_ciphers():
     return f"{RED}[-] SSL Ciphers: Niet opgehaald{RESET}"
 
 def check_timeouts():
-    """Controleer timeouts."""
+    """Controleer algemene timeouts."""
     admin_timeout = get_zimbra_config('zimbraAdminConsoleSessionTimeout')
     mail_timeout = get_zimbra_config('zimbraMailIdleSessionTimeout')
     web_timeout = get_zimbra_config('zimbraWebClientSessionTimeout')
@@ -80,59 +95,4 @@ def check_admin_console():
 
 def check_nginx_log():
     """Controleer of het Nginx logbestand aanwezig is."""
-    nginx_log = "/opt/zimbra/log/nginx.access.log"
-    if os.path.isfile(nginx_log):
-        return f"{GREEN}[+] Nginx Log: Aanwezig ({nginx_log}){RESET}"
-    return f"{RED}[-] Nginx Log: Niet gevonden{RESET}"
-
-def check_security_headers():
-    """Controleer of security headers zijn ingesteld."""
-    custom_template = "/opt/zimbra/conf/nginx/templates/custom/nginx.conf.web.https.default.template"
-    if os.path.isfile(custom_template):
-        with open(custom_template, 'r') as f:
-            content = f.read()
-            if "add_header X-Content-Type-Options" in content:
-                return f"{GREEN}[+] Security Headers: Ingesteld in custom template{RESET}"
-            return f"{RED}[-] Security Headers: Geen relevante headers in custom template{RESET}"
-    return f"{YELLOW}[*] Security Headers: Geen custom nginx template actief{RESET}"
-
-def check_server_version_header():
-    """Controleer of de Zimbra-versie niet zichtbaar is in de Server-header."""
-    zimbra_url = "https://webmail.zimbra-url/"  # Vervang met je Zimbra-server URL
-    try:
-        response = requests.get(zimbra_url)  # Zet verify=False als je een zelf-ondertekend certificaat gebruikt
-        server_header = response.headers.get('Server', '')
-        if 'Zimbra' in server_header:
-            return f"{RED}[-] Zimbra versie is zichtbaar in de Server-header: {server_header}{RESET}"
-        return f"{GREEN}[+] Zimbra versie is verborgen in de Server-header{RESET}"
-    except requests.exceptions.RequestException as e:
-        return f"{RED}[-] Fout bij het verbinden met Zimbra-server: {e}{RESET}"
-
-def main():
-    print(f"{YELLOW}=== Zimbra Web Access Hardening Check ==={RESET}")
-
-    # TLS Protocols check
-    print(check_tls_protocols())
-
-    # SSL Ciphers check
-    print(check_ssl_ciphers())
-
-    # Timeouts check
-    print(check_timeouts())
-
-    # Admin Console check
-    print(check_admin_console())
-
-    # Nginx log check
-    print(check_nginx_log())
-
-    # Security headers check
-    print(check_security_headers())
-
-    # Server version header check
-    print(check_server_version_header())
-
-    print(f"{YELLOW}=== Controle afgerond ==={RESET}")
-
-if __name__ == "__main__":
-    main()
+    nginx_log = "/opt/zimbra/log_

@@ -1,3 +1,4 @@
+# replace zimbra_url = "https://webmail.zimbra-url/" with your own web url 
 #!/usr/bin/env python3
 import subprocess
 import os
@@ -97,7 +98,7 @@ def check_security_headers():
 
 def check_server_version_header():
     """Controleer of de Zimbra-versie niet zichtbaar is in de Server-header."""
-    zimbra_url = "https://webmail.rp-grece.be/"  # Vervang met je Zimbra-server URL
+    zimbra_url = "https://webmail.zimbra-url/"  # Vervang met je Zimbra-server URL
     try:
         response = requests.get(zimbra_url)  # Zet verify=False als je een zelf-ondertekend certificaat gebruikt
         server_header = response.headers.get('Server', '')
